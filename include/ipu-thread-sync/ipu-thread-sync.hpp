@@ -69,6 +69,29 @@ startOnAllWorkers(vertex_t *vertex) {
 }
 
 /**
+ * @brief Syncs all worker threads on the current tile and then starts the given
+ * member function on all worker threads.
+ * @tparam vertex_t The type of the vertex.
+ * @tparam func The member function to be started on all worker threads.
+ * @param vertex A pointer to the vertex object.
+ */
+template <typename vertex_t, bool (vertex_t::*func)(unsigned)>
+[[clang::always_inline]] __attribute__((target("supervisor"))) inline void
+syncAndStartOnAllWorkers(vertex_t *vertex) {
+  void *vertexBase = reinterpret_cast<void *>(vertex);
+  void *entryPoint =
+      reinterpret_cast<void *>(&detail::workerThreadEntryPoint<vertex_t, func>);
+
+  __asm__(
+      "sync %[group]\n\t"
+      "runall %[func], %[vertex_base], 0\n\t"
+      :
+      : [group] "i"(TEXCH_SYNCZONE_LOCAL), [func] "r"(entryPoint),
+        [vertex_base] "r"(vertexBase)
+      :);
+}
+
+/**
  * @brief Syncs all worker threads on the current tile.
  */
 [[clang::always_inline]] __attribute__((target("supervisor"))) inline void
