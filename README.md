@@ -1,4 +1,4 @@
-# Worker thread synchronization on IPUs
+# IPU Threading Library
 
 This library provides a set of functions for spawning and synchronizing worker threads from supervisor threads on IPUs.
 
